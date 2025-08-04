@@ -31,6 +31,7 @@ LED> fire       # Kamin-Atmosphäre
 - **🔄 Flash-Speicherung** - alle Einstellungen überleben Neustart
 - **⚡ 50fps Performance** - Non-blocking Timing für flüssige Animationen
 - **🧠 Intelligentes State-Management** - Optimiert für 600 LEDs
+- **🌟 Spektakuläre Startup-Animation** - WiFi-Erfolg wird mit Dual-Meteor-Show gefeiert
 
 ## Professional Effekt-Bibliothek
 
@@ -243,6 +244,21 @@ ZONE:2:5          # Rainbow Glitter hinten
 PARAM:speed:60    # Synchrone mittlere Geschwindigkeit
 ```
 
+### 🎨 Statische Farben (Solid Color)
+```bash
+# Über Python Controller (einfachster Weg)
+LED> solid 255,255,255       # Perfektes Weiß
+LED> solid 255,0,0           # Klassisches Rot
+LED> solid 0,255,0           # Grün
+LED> solid 0,0,255           # Blau
+LED> solid 255 255 0         # Gelb (alternative Syntax)
+
+# Über WiFi-Befehle
+AUTO:0
+EFFECT:9          # Effekt 9 = Solid Color
+COLOR:255,255,255 # Weiße Farbe
+```
+
 ## Hardware & Installation
 
 ### System-Spezifikationen
@@ -266,13 +282,22 @@ PARAM:speed:60    # Synchrone mittlere Geschwindigkeit
 - **Power**: 5V/GND (externes Netzteil empfohlen)
 - **WiFi**: Onboard Nano 33 IoT
 
+### Startup-Sequenz
+**Beim Einschalten erlebst du eine spektakuläre Startup-Show:**
+1. **500ms Weißes Aufleuchten** - Bestätigt LED-Initialisierung
+2. **WiFi-Verbindung** - Sucht automatisch dein Netzwerk
+3. **Bei WiFi-Erfolg**: 
+   - ⚡ Zwei weiße Meteors rasen von beiden Enden zur Mitte
+   - ✨ 3 Sekunden weißes Funkeln wenn sie sich treffen
+   - 🎯 Strip geht aus und ist bereit für Steuerung
+
 ### Erste Schritte
 1. **WiFi konfigurieren**: 
    - `secrets_template.h` zu `secrets.h` kopieren
    - Deine WiFi-Daten in `secrets.h` eintragen
 2. **LED-Anzahl prüfen** (NUM_LEDS = 600)
 3. **Code hochladen**
-4. **Serial Monitor öffnen** für IP-Adresse und BLE-Status
+4. **Startup-Animation genießen** 📺
 5. **Steuerung wählen**:
    - **WiFi**: `python3 wifi_control.py` oder Web-Browser
    - **BLE**: Mobile App oder BLE Terminal
@@ -317,6 +342,7 @@ python3 wifi_control.py [IP-Adresse]
 - **Interaktiver Modus**: Live-Kommandozeile mit Auto-Completion
 - **Scenario-Presets**: Vorgefertigte Szenarien (party, relax, fire, matrix...)  
 - **Parameter-Control**: Alle 6 Effekt-Parameter steuerbar
+- **Static Colors**: `solid <r,g,b>` Shortcut für statische Farben
 - **Status-Monitoring**: Live-Status mit JSON-API
 - **Bulk-Testing**: Automatischer Test aller Effekte
 
@@ -326,6 +352,7 @@ LED> party                    # Aktiviert Party-Szenario
 LED> effect 13                # Feuer-Effekt
 LED> speed 80                 # Geschwindigkeit auf 80%
 LED> color 255,0,0           # Rote Farbe
+LED> solid 255,255,255       # Statische weiße Farbe (Shortcut)
 LED> brightness 200          # Helligkeit auf 200
 LED> status                  # Zeigt aktuellen Status
 ```

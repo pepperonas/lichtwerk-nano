@@ -44,7 +44,7 @@ struct Preset {
 
 // Control State
 struct ControlState {
-  bool autoMode = true;          // Auto-Effekte oder manuell
+  bool autoMode = false;         // Auto-Effekte oder manuell - standardmäßig aus
   uint8_t currentEffect = 0;     // Aktueller Effekt (0-19 mit neuen Effekten)
   uint8_t brightness = 255;
   uint8_t r = 255, g = 255, b = 255;
@@ -85,6 +85,17 @@ void setup() {
   FastLED.clear();
   FastLED.show();
   
+  // Startup-Animation: 500ms weißes Aufleuchten
+  Serial.println("💡 Startup animation...");
+  // Verwende setRGB um COLOR_ORDER zu berücksichtigen
+  for(int i = 0; i < NUM_LEDS; i++) {
+    leds[i].setRGB(255, 255, 255);
+  }
+  FastLED.show();
+  delay(500);
+  FastLED.clear();
+  FastLED.show();
+  
   // BLE initialisieren
   Serial.print("🔵 Initializing BLE...");
   if (!BLE.begin()) {
@@ -117,15 +128,15 @@ void setup() {
     Serial.println("WiFi connected successfully");
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
+    
+    // WiFi Success Animation: Doppel-Meteor von beiden Enden zur Mitte
+    wifiSuccessAnimation();
   } else {
     Serial.println("\\nWiFi connection failed - continuing with BLE only");
   }
   
   // EEPROM initialisieren und Einstellungen laden
   loadSettings();
-  
-  // Status-Anzeige: Grün = bereit
-  wifiStatusReady();
 }
 
 void loop() {
@@ -458,13 +469,14 @@ void effect_lightning(uint32_t now, int startLed, int endLed) {
     // Blitz-Helligkeit basierend auf Intensität
     uint8_t brightness = map(config.intensity, 0, 100, 100, 255);
     
-    FastLED.clear();
+    // Nur den betroffenen Bereich löschen, nicht alle LEDs
+    fill_solid(&leds[startLed], endLed - startLed, CRGB::Black);
     for(int i = 0; i < flashLength && (flashPos + i) < endLed; i++) {
       leds[flashPos + i] = CRGB(brightness, brightness, brightness);
     }
   } else if (now - effectState.lastUpdate >= 50) {
-    // Blitz nach 50ms löschen
-    FastLED.clear();
+    // Blitz nach 50ms löschen - nur den Bereich
+    fill_solid(&leds[startLed], endLed - startLed, CRGB::Black);
   }
 }
 
@@ -503,14 +515,18 @@ void effect_police(uint32_t now, int startLed, int endLed) {
     
     int halfLeds = (endLed - startLed) / 2;
     
+    // Polizei: Rot und Blau - mit korrigierter Farbzuordnung
+    CRGB policeRed = CRGB(255, 0, 0);   // Rot: R=255, G=0, B=0
+    CRGB policeBlue = CRGB(0, 0, 255);  // Blau: R=0, G=0, B=255
+    
     if (effectState.step == 0) {
       // Rot links, Blau rechts
-      fill_solid(&leds[startLed], halfLeds, CRGB::Red);
-      fill_solid(&leds[startLed + halfLeds], halfLeds, CRGB::Blue);
+      fill_solid(&leds[startLed], halfLeds, policeRed);
+      fill_solid(&leds[startLed + halfLeds], halfLeds, policeBlue);
     } else {
       // Blau links, Rot rechts  
-      fill_solid(&leds[startLed], halfLeds, CRGB::Blue);
-      fill_solid(&leds[startLed + halfLeds], halfLeds, CRGB::Red);
+      fill_solid(&leds[startLed], halfLeds, policeBlue);
+      fill_solid(&leds[startLed + halfLeds], halfLeds, policeRed);
     }
   }
 }
@@ -754,16 +770,17 @@ void effect_theaterChase(uint32_t now, int startLed, int endLed) {
     uint8_t spacing = map(config.size, 0, 100, 3, 10);
     
     for(int i = startLed; i < endLed; i += spacing) {
-      int pos = i + (config.direction ? effectState.chasePos : -effectState.chasePos);
-      pos = ((pos - startLed) % (endLed - startLed)) + startLed;
-      if(pos < startLed) pos += (endLed - startLed);
+      int offset = config.direction ? effectState.chasePos : -effectState.chasePos;
+      int pos = ((i - startLed + offset) % (endLed - startLed)) + startLed;
       
-      if(pos >= startLed && pos < endLed) {
-        if(config.colorMode == 1) {
-          leds[pos] = CHSV(((i - startLed) * 255 / (endLed - startLed) + effectState.chasePos * 10) % 256, 255, 255);
-        } else {
-          leds[pos] = CRGB(controlState.r, controlState.g, controlState.b);
-        }
+      // Sicherstellen dass pos im gültigen Bereich ist
+      while(pos < startLed) pos += (endLed - startLed);
+      while(pos >= endLed) pos -= (endLed - startLed);
+      
+      if(config.colorMode == 1) {
+        leds[pos] = CHSV(((i - startLed) * 255 / (endLed - startLed) + effectState.chasePos * 10) % 256, 255, 255);
+      } else {
+        leds[pos] = CRGB(controlState.r, controlState.g, controlState.b);
       }
     }
     
@@ -797,7 +814,7 @@ void effect_colorWipe(uint32_t now, int startLed, int endLed) {
       }
     } else {
       // Rückwärts wischen
-      if(effectState.wipePos >= 0) {
+      if(effectState.wipePos < (endLed - startLed)) {
         int pos = endLed - 1 - effectState.wipePos;
         if(pos >= startLed) {
           if(config.colorMode == 1) {
@@ -807,7 +824,10 @@ void effect_colorWipe(uint32_t now, int startLed, int endLed) {
           }
         }
         effectState.wipePos++;
-        if(effectState.wipePos >= (endLed - startLed)) effectState.wipePos = 0;
+      } else {
+        // Reset und löschen
+        effectState.wipePos = 0;
+        fadeToBlackBy(&leds[startLed], endLed - startLed, 50);
       }
     }
   }
@@ -1009,8 +1029,8 @@ void effect_bouncingBalls(uint32_t now, int startLed, int endLed) {
   // Initialisierung beim ersten Aufruf
   if(!effectState.ballsInitialized) {
     for(int i = 0; i < 5; i++) {
-      effectState.ballHeight[i] = random(startLed, endLed);
-      effectState.ballVelocity[i] = 0;
+      effectState.ballHeight[i] = startLed; // Alle Bälle starten am Boden
+      effectState.ballVelocity[i] = -2.0 - random8(10) / 10.0; // Negative Geschwindigkeit = nach oben
       effectState.ballHue[i] = random8();
     }
     effectState.ballsInitialized = true;
@@ -1028,7 +1048,7 @@ void effect_bouncingBalls(uint32_t now, int startLed, int endLed) {
     float gravity = map(config.size, 0, 100, 10, 100) / 1000.0;
     
     for(int i = 0; i < ballCount; i++) {
-      effectState.ballVelocity[i] -= gravity;
+      effectState.ballVelocity[i] += gravity; // Schwerkraft nach unten (positiv)
       effectState.ballHeight[i] += effectState.ballVelocity[i];
       
       // Bounce detection
@@ -1221,18 +1241,61 @@ void stabilizeWiFiConnection() {
   }
 }
 
-// WiFi Status Anzeigen (non-blocking, nur beim Setup)
-void wifiStatusReady() {
-  // Kurzer grüner Blink beim Setup
-  for(int i = 0; i < 5; i++) {
-    leds[i] = CRGB::Green;
+// WiFi Success Animation: Dual Meteors treffen sich in der Mitte
+void wifiSuccessAnimation() {
+  Serial.println("🌟 WiFi Success Animation");
+  
+  int center = NUM_LEDS / 2;
+  int meteorLength = 20;
+  
+  // Phase 1: Meteors laufen von beiden Enden zur Mitte
+  for(int pos = 0; pos <= center; pos++) {
+    FastLED.clear();
+    
+    // Linker Meteor (von 0 zur Mitte)
+    for(int i = 0; i < meteorLength && (pos + i) < NUM_LEDS; i++) {
+      int ledPos = pos + i;
+      uint8_t brightness = 255 - (i * 255 / meteorLength);
+      leds[ledPos].setRGB(brightness, brightness, brightness);
+    }
+    
+    // Rechter Meteor (von Ende zur Mitte)
+    for(int i = 0; i < meteorLength && (NUM_LEDS - 1 - pos - i) >= 0; i++) {
+      int ledPos = NUM_LEDS - 1 - pos - i;
+      uint8_t brightness = 255 - (i * 255 / meteorLength);
+      leds[ledPos].setRGB(brightness, brightness, brightness);
+    }
+    
+    FastLED.show();
+    delay(8); // Viel schneller!
+    
+    // Stoppen wenn sich die Meteors treffen
+    if(pos >= center - meteorLength) break;
   }
-  FastLED.show();
-  delay(1000);  // Nur beim Setup OK
-  for(int i = 0; i < 5; i++) {
-    leds[i] = CRGB::Black;
+  
+  // Phase 2: 3 Sekunden weißes Funkeln wenn sie sich treffen
+  Serial.println("✨ Sparkle phase");
+  uint32_t sparkleStart = millis();
+  while(millis() - sparkleStart < 3000) {
+    // Hintergrund komplett schwarz für perfekten Kontrast
+    FastLED.clear();
+    
+    // Mehr Funken mit korrekter COLOR_ORDER
+    for(int i = 0; i < 40; i++) {
+      int pos = random(NUM_LEDS);
+      uint8_t brightness = random8(150, 255);
+      // setRGB berücksichtigt automatisch COLOR_ORDER
+      leds[pos].setRGB(brightness, brightness, brightness);
+    }
+    
+    FastLED.show();
+    delay(80); // Etwas schneller
   }
+  
+  // Phase 3: Ausblenden
+  FastLED.clear();
   FastLED.show();
+  Serial.println("🎯 Animation complete");
 }
 
 // === HILFSFUNKTIONEN ===

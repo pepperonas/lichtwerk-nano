@@ -118,6 +118,8 @@ def interactive_mode(controller):
                 controller.send_command("AUTO:0")
             elif " " in cmd:
                 handle_parameter_command(controller, cmd)
+            elif cmd.lower().startswith("solid "):
+                set_solid_color(controller, cmd)
             elif cmd.lower() in SCENARIOS:
                 activate_scenario(controller, cmd.lower())
             elif cmd.lower() == "test":
@@ -137,6 +139,7 @@ def show_help():
     print("\n📖 Available Commands:")
     print("Basic: on/off, auto/manual, brightness <N>, effect <N>")
     print("Params: speed <N>, intensity <N>, color <r,g,b>, direction <0|1>")
+    print("Static: solid <r,g,b> - Set static color (shortcut for effect 9)")
     print("Scenarios: party, relax, fire, matrix, police, rainbow")
     print("Info: effects, status, test, help, quit")
 
@@ -213,6 +216,39 @@ def handle_parameter_command(controller, cmd):
             print(f"❌ Unknown parameter: {param}")
     except ValueError:
         print("❌ Invalid number format")
+
+def set_solid_color(controller, cmd):
+    """Statische Farbe setzen - Shortcut für Effekt 9"""
+    parts = cmd.split()
+    if len(parts) < 2:
+        print("❌ Usage: solid <r,g,b> or solid <r> <g> <b>")
+        print("   Examples: solid 255,0,0  or  solid 255 0 0")
+        return
+        
+    try:
+        if "," in parts[1]:
+            # Format: solid 255,0,0
+            rgb = [int(x.strip()) for x in parts[1].split(",")]
+        else:
+            # Format: solid 255 0 0
+            if len(parts) < 4:
+                print("❌ Need 3 values: solid <r> <g> <b>")
+                return
+            rgb = [int(parts[1]), int(parts[2]), int(parts[3])]
+            
+        if len(rgb) != 3 or not all(0 <= x <= 255 for x in rgb):
+            print("❌ RGB values must be 0-255")
+            return
+            
+        print(f"🎨 Setting solid color: RGB({rgb[0]}, {rgb[1]}, {rgb[2]})")
+        controller.send_command("AUTO:0")  # Manual mode
+        controller.send_command("EFFECT:9")  # Solid color effect
+        controller.send_command(f"COLOR:{rgb[0]},{rgb[1]},{rgb[2]}")
+        controller.send_command("ON:1")  # Make sure it's on
+        print("✅ Static color set!")
+        
+    except ValueError:
+        print("❌ Invalid RGB values - must be numbers 0-255")
 
 def activate_scenario(controller, scenario_key):
     """Szenario aktivieren"""
