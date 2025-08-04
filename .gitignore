@@ -1,0 +1,44 @@
+# Arduino IDE files
+*.hex
+*.elf
+*.map
+*.lst
+*.sym
+*.lss
+
+# Build directories
+build/
+.build/
+
+# IDE specific files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# WiFi credentials
+secrets.h
+config.h
+credentials.h
+wifi_config.h
+
+# Keep template files
+!secrets_template.h
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*_temp*
