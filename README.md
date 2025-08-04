@@ -32,6 +32,7 @@ LED> fire       # Kamin-Atmosphäre
 - **⚡ 50fps Performance** - Non-blocking Timing für flüssige Animationen
 - **🧠 Intelligentes State-Management** - Optimiert für 600 LEDs
 - **🌟 Spektakuläre Startup-Animation** - WiFi-Erfolg wird mit Dual-Meteor-Show gefeiert
+- **🎨 Automatische Farbkorrektur** - Perfekte Farbdarstellung über den kompletten Strip
 
 ## Professional Effekt-Bibliothek
 
@@ -80,6 +81,7 @@ Jeder Effekt verfügt über 6 präzise konfigurierbare Parameter:
 - **Memory-Efficiency**: Optimiert für 600 LEDs ohne Speicher-Überschreitung
 - **50fps Rendering**: Konstante 20ms Updatezyklen für flüssige Animationen
 - **FastLED Integration**: Nutzt `fadeToBlackBy()`, `sin8()`, `HeatColor()` für Performance
+- **Adaptive Farbkorrektur**: Automatische Anpassung für einheitliche Farben über 600 LEDs
 
 ### WiFi Befehle
 
@@ -259,6 +261,25 @@ EFFECT:9          # Effekt 9 = Solid Color
 COLOR:255,255,255 # Weiße Farbe
 ```
 
+## 🔧 Erweiterte Features
+
+### Automatische Farbkorrektur
+**Problem:** Bei langen LED-Strips (600 LEDs) kann Spannungsabfall zu Farbverschiebungen führen - die zweite Hälfte erscheint oft gelblich/orange statt weiß.
+
+**Lösung:** Intelligente Farbkorrektur automatisch integriert:
+- **LEDs 0-299**: Originalfarben (erste Strip-Hälfte)
+- **LEDs 300-599**: Automatische Korrektur (zweite Strip-Hälfte)
+- **Algorithmus**: Reduziert Rot (-15%) und Grün (-25%) für perfektes Weiß
+
+**Konfigurierbar im Code:**
+```cpp
+#define CORRECTION_RED_FACTOR   0.85    // Rot-Korrektur
+#define CORRECTION_GREEN_FACTOR 0.75    // Grün-Korrektur  
+#define CORRECTION_BLUE_FACTOR  1.0     // Blau unverändert
+```
+
+**Anwendung:** Alle weißen Animationen und der Solid Color Effekt nutzen automatisch die Korrektur für einheitliche Farbdarstellung über den kompletten Strip.
+
 ## Hardware & Installation
 
 ### System-Spezifikationen
@@ -311,6 +332,7 @@ COLOR:255,255,255 # Weiße Farbe
 - **Non-blocking**: Keine `delay()`-Aufrufe blockieren WiFi-Communication
 - **Error-Handling**: Robuste Fehlerbehandlung für Netzwerk-Verbindungen
 - **Auto-Reconnect**: Intelligente WiFi-Wiederverbindung bei Verbindungsabbrüchen
+- **Hardware-Optimiert**: Farbkorrektur kompensiert Spannungsabfall bei langen LED-Strips
 
 ### 🚀 Performance-Metriken
 - **Framerate**: Konstante 50fps (20ms Update-Zyklen)

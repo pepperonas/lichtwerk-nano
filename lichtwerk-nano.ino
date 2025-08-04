@@ -9,7 +9,14 @@
 #define NUM_LEDS    600     
 #define BRIGHTNESS  255     
 #define LED_TYPE    WS2812B 
-#define COLOR_ORDER GRB     
+#define COLOR_ORDER GRB
+
+// Farbkorrektur für zweite Strip-Hälfte (LEDs 300-599)
+// Werte zwischen 0.0 und 1.0 - reduziert Gelbstich/Orange
+#define SECOND_HALF_START 300
+#define CORRECTION_RED_FACTOR   0.85    // Rot etwas reduzieren
+#define CORRECTION_GREEN_FACTOR 0.75    // Grün deutlich reduzieren (Gelbstich)
+#define CORRECTION_BLUE_FACTOR  1.0     // Blau unverändert     
 
 CRGB leds[NUM_LEDS];
 
@@ -85,12 +92,9 @@ void setup() {
   FastLED.clear();
   FastLED.show();
   
-  // Startup-Animation: 500ms weißes Aufleuchten
+  // Startup-Animation: 500ms weißes Aufleuchten (farbkorrigiert)
   Serial.println("💡 Startup animation...");
-  // Verwende setRGB um COLOR_ORDER zu berücksichtigen
-  for(int i = 0; i < NUM_LEDS; i++) {
-    leds[i].setRGB(255, 255, 255);
-  }
+  fillCorrectedSolid(0, NUM_LEDS, 255, 255, 255);
   FastLED.show();
   delay(500);
   FastLED.clear();
@@ -414,10 +418,9 @@ void runCurrentEffect(uint32_t now) {
 
 // === NEUE EINHEITLICHE EFFEKTE ===
 
-// Effekt 9: Solid Color - Einfarbig
+// Effekt 9: Solid Color - Einfarbig (mit Farbkorrektur)
 void effect_solidColor(uint32_t now, int startLed, int endLed) {
-  CRGB color = CRGB(controlState.r, controlState.g, controlState.b);
-  fill_solid(&leds[startLed], endLed - startLed, color);
+  fillCorrectedSolid(startLed, endLed - startLed, controlState.r, controlState.g, controlState.b);
 }
 
 // Effekt 11: Breathing - Sanftes Atmen  
@@ -1252,18 +1255,18 @@ void wifiSuccessAnimation() {
   for(int pos = 0; pos <= center; pos++) {
     FastLED.clear();
     
-    // Linker Meteor (von 0 zur Mitte)
+    // Linker Meteor (von 0 zur Mitte) - farbkorrigiert
     for(int i = 0; i < meteorLength && (pos + i) < NUM_LEDS; i++) {
       int ledPos = pos + i;
       uint8_t brightness = 255 - (i * 255 / meteorLength);
-      leds[ledPos].setRGB(brightness, brightness, brightness);
+      setCorrectedRGB(ledPos, brightness, brightness, brightness);
     }
     
-    // Rechter Meteor (von Ende zur Mitte)
+    // Rechter Meteor (von Ende zur Mitte) - farbkorrigiert
     for(int i = 0; i < meteorLength && (NUM_LEDS - 1 - pos - i) >= 0; i++) {
       int ledPos = NUM_LEDS - 1 - pos - i;
       uint8_t brightness = 255 - (i * 255 / meteorLength);
-      leds[ledPos].setRGB(brightness, brightness, brightness);
+      setCorrectedRGB(ledPos, brightness, brightness, brightness);
     }
     
     FastLED.show();
@@ -1280,12 +1283,11 @@ void wifiSuccessAnimation() {
     // Hintergrund komplett schwarz für perfekten Kontrast
     FastLED.clear();
     
-    // Mehr Funken mit korrekter COLOR_ORDER
+    // Mehr Funken mit Farbkorrektur
     for(int i = 0; i < 40; i++) {
       int pos = random(NUM_LEDS);
       uint8_t brightness = random8(150, 255);
-      // setRGB berücksichtigt automatisch COLOR_ORDER
-      leds[pos].setRGB(brightness, brightness, brightness);
+      setCorrectedRGB(pos, brightness, brightness, brightness);
     }
     
     FastLED.show();
@@ -1296,6 +1298,30 @@ void wifiSuccessAnimation() {
   FastLED.clear();
   FastLED.show();
   Serial.println("🎯 Animation complete");
+}
+
+// === FARBKORREKTUR-FUNKTIONEN ===
+
+// Zentrale Funktion für farbkorrigierte LED-Zuweisung
+void setCorrectedRGB(int ledIndex, uint8_t r, uint8_t g, uint8_t b) {
+  if (ledIndex >= SECOND_HALF_START && ledIndex < NUM_LEDS) {
+    // Zweite Hälfte: Farbkorrektur anwenden
+    r = (uint8_t)(r * CORRECTION_RED_FACTOR);
+    g = (uint8_t)(g * CORRECTION_GREEN_FACTOR);
+    b = (uint8_t)(b * CORRECTION_BLUE_FACTOR);
+  }
+  // Erste Hälfte: keine Korrektur nötig
+  leds[ledIndex].setRGB(r, g, b);
+}
+
+// Hilfsfunktion für Bereichs-Füllung mit Farbkorrektur
+void fillCorrectedSolid(int startLed, int count, uint8_t r, uint8_t g, uint8_t b) {
+  for(int i = 0; i < count; i++) {
+    int ledIndex = startLed + i;
+    if(ledIndex < NUM_LEDS) {
+      setCorrectedRGB(ledIndex, r, g, b);
+    }
+  }
 }
 
 // === HILFSFUNKTIONEN ===
