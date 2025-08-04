@@ -32,7 +32,7 @@ LED> fire       # Kamin-Atmosphäre
 - **⚡ 50fps Performance** - Non-blocking Timing für flüssige Animationen
 - **🧠 Intelligentes State-Management** - Optimiert für 600 LEDs
 - **🌟 Spektakuläre Startup-Animation** - WiFi-Erfolg wird mit Dual-Meteor-Show gefeiert
-- **⚡ Dual-Power Design** - Optimiert für zwei separate Stromquellen bei 600 LEDs
+- **🎨 Hybrid-Optimierung** - Dual-Power + adaptive Farbkorrektur für perfekte Farben
 
 ## Professional Effekt-Bibliothek
 
@@ -261,12 +261,14 @@ EFFECT:9          # Effekt 9 = Solid Color
 COLOR:255,255,255 # Weiße Farbe
 ```
 
-## 🔧 Hardware-Optimierungen
+## 🔧 Hybrid-Optimierung: Hardware + Software
 
-### Dual-Power Setup für 600 LEDs
-**Problem:** Lange LED-Strips (600 LEDs) benötigen sehr viel Strom. Eine einzelne Stromquelle kann Spannungsabfall und Farbverschiebungen verursachen.
+### Dual-Power Setup mit Feinabstimmung
+**Problem:** Selbst mit zwei Stromquellen können minimale Farbunterschiede zwischen den Strip-Hälften auftreten, bedingt durch LED-Toleranzen oder unterschiedliche Kabellängen.
 
-**Empfohlene Lösung:** Zwei separate Stromquellen verwenden:
+**Lösung:** Kombination aus Hardware- und Software-Optimierung:
+
+#### Hardware: Dual-Power Setup
 - **Erste Hälfte (LEDs 0-299)**: Stromeinspeisung am Anfang des Strips
 - **Zweite Hälfte (LEDs 300-599)**: Zusätzliche Stromeinspeisung in der Mitte
 
@@ -279,11 +281,24 @@ Arduino Nano 33 IoT ──► LED 0 ──► LED 299
                               LED 300 ──► LED 599
 ```
 
-**Vorteile:**
-- Perfekte Farbdarstellung über den kompletten Strip
-- Reduzierte Wärmeentwicklung
-- Gleichmäßige Helligkeit ohne Spannungsabfall
-- Maximale LED-Performance bei hohen Helligkeitswerten
+#### Software: Adaptive Farbkorrektur
+**Feinabstimmung für perfekte Farbharmonie:**
+- **LEDs 0-299**: Originalfarben (erste Strip-Hälfte)
+- **LEDs 300-599**: Sanfte Korrektur (zweite Strip-Hälfte)
+- **Algorithmus**: Minimale Anpassung für einheitliches Erscheinungsbild
+
+**Konfigurierbar im Code:**
+```cpp
+#define CORRECTION_RED_FACTOR   0.90    // -10% Rot
+#define CORRECTION_GREEN_FACTOR 0.85    // -15% Grün  
+#define CORRECTION_BLUE_FACTOR  1.0     // Blau unverändert
+```
+
+**Vorteile der Hybrid-Lösung:**
+- Hauptlast durch Hardware-Optimierung (Dual-Power)
+- Feinabstimmung durch Software für perfekte Ergebnisse
+- Anpassbar an individuelle LED-Strip-Charakteristiken
+- Zukunftssicher und flexibel konfigurierbar
 
 **Technische Spezifikationen:**
 - **Netzteil 1 & 2**: Je 5V/5A (empfohlen für optimale Performance)
