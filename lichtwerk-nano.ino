@@ -133,8 +133,21 @@ void setup() {
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
     
+    // Stop all current effects before WiFi animation
+    controlState.isOn = false;
+    controlState.autoMode = false;
+    FastLED.clear();
+    FastLED.show();
+    delay(100);
+    
+    // First test basic brightness variation
+    testBrightnessVariation();
+    
     // WiFi Success Animation: Doppel-Meteor von beiden Enden zur Mitte
     wifiSuccessAnimation();
+    
+    // Resume normal operation after animation
+    controlState.isOn = true;
   } else {
     Serial.println("\\nWiFi connection failed - continuing with BLE only");
   }
@@ -1244,6 +1257,29 @@ void stabilizeWiFiConnection() {
   }
 }
 
+// Test function for brightness variation
+void testBrightnessVariation() {
+  Serial.println("🧪 Testing brightness variation...");
+  
+  // Clear all LEDs
+  FastLED.clear();
+  
+  // Test pattern: alternating brightness levels
+  for(int i = 0; i < 100; i += 4) {
+    leds[i] = CRGB(255, 255, 255);     // Full brightness
+    leds[i+1] = CRGB(180, 180, 180);   // 70% brightness
+    leds[i+2] = CRGB(100, 100, 100);   // 40% brightness  
+    leds[i+3] = CRGB(50, 50, 50);      // 20% brightness
+  }
+  
+  FastLED.show();
+  delay(5000); // Show for 5 seconds
+  
+  FastLED.clear();
+  FastLED.show();
+  Serial.println("🧪 Brightness test complete");
+}
+
 // WiFi Success Animation: Dual Meteors treffen sich in der Mitte
 void wifiSuccessAnimation() {
   Serial.println("🌟 WiFi Success Animation");
@@ -1276,22 +1312,63 @@ void wifiSuccessAnimation() {
     if(pos >= center - meteorLength) break;
   }
   
-  // Phase 2: 3 Sekunden weißes Funkeln wenn sie sich treffen
-  Serial.println("✨ Sparkle phase");
+  // Phase 2: 5 Sekunden weißes Funkeln wenn sie sich treffen
+  Serial.println("✨ Sparkle phase - 5 seconds with varying brightness");
   uint32_t sparkleStart = millis();
-  while(millis() - sparkleStart < 3000) {
-    // Hintergrund komplett schwarz für perfekten Kontrast
+  
+  // Arrays für persistente Partikel
+  const int maxParticles = 60;
+  int particlePos[maxParticles];
+  uint8_t particleBrightness[maxParticles];
+  
+  // Initialisiere Partikel mit zufälligen Positionen und Helligkeiten
+  for(int i = 0; i < maxParticles; i++) {
+    particlePos[i] = random(NUM_LEDS);
+    // Verschiedene Helligkeitsstufen für plastischen Effekt
+    uint8_t level = random8(100);
+    if(level < 40) {
+      particleBrightness[i] = random8(30, 80);    // 40% dunkel
+    } else if(level < 70) {
+      particleBrightness[i] = random8(80, 150);   // 30% mittel
+    } else if(level < 90) {
+      particleBrightness[i] = random8(150, 200);  // 20% hell
+    } else {
+      particleBrightness[i] = random8(200, 255);  // 10% sehr hell
+    }
+  }
+  
+  while(millis() - sparkleStart < 5000) {
+    // Hintergrund schwarz
     FastLED.clear();
     
-    // Mehr Funken mit Farbkorrektur
-    for(int i = 0; i < 40; i++) {
-      int pos = random(NUM_LEDS);
-      uint8_t brightness = random8(150, 255);
-      setCorrectedRGB(pos, brightness, brightness, brightness);
+    // Zeichne alle Partikel mit ihren individuellen Helligkeiten
+    for(int i = 0; i < maxParticles; i++) {
+      // Langsames Fading für natürlichen Effekt
+      if(particleBrightness[i] > 5) {
+        setCorrectedRGB(particlePos[i], particleBrightness[i], particleBrightness[i], particleBrightness[i]);
+        
+        // Gelegentlich neue Position und Helligkeit
+        if(random8(100) < 20) {
+          particlePos[i] = random(NUM_LEDS);
+          uint8_t level = random8(100);
+          if(level < 40) {
+            particleBrightness[i] = random8(30, 80);
+          } else if(level < 70) {
+            particleBrightness[i] = random8(80, 150);
+          } else if(level < 90) {
+            particleBrightness[i] = random8(150, 200);
+          } else {
+            particleBrightness[i] = random8(200, 255);
+          }
+        } else {
+          // Leichtes Fading
+          particleBrightness[i] = particleBrightness[i] * 0.95;
+        }
+      }
     }
     
     FastLED.show();
-    delay(80); // Etwas schneller
+    delay(50); // Flüssige Animation
   }
   
   // Phase 3: Ausblenden

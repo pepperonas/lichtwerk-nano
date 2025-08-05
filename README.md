@@ -333,8 +333,9 @@ Arduino Nano 33 IoT ──► LED 0 ──► LED 299
 1. **500ms Weißes Aufleuchten** - Bestätigt LED-Initialisierung
 2. **WiFi-Verbindung** - Sucht automatisch dein Netzwerk
 3. **Bei WiFi-Erfolg**: 
-   - ⚡ Zwei weiße Meteors rasen von beiden Enden zur Mitte
-   - ✨ 3 Sekunden weißes Funkeln wenn sie sich treffen
+   - 🧪 **5-Sekunden Helligkeitstest** - Zeigt 4 verschiedene Helligkeitsstufen zur Verifikation
+   - ⚡ **Dual-Meteor Animation** - Zwei weiße Meteors rasen von beiden Enden zur Mitte
+   - ✨ **5-Sekunden 3D-Funkeln** - Partikel mit unterschiedlicher Helligkeit für plastischen Effekt
    - 🎯 Strip geht aus und ist bereit für Steuerung
 
 ### Erste Schritte
